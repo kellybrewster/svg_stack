@@ -20,7 +20,7 @@
 ## OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ## THE SOFTWARE.
 
-from lxml import etree # Ubuntu Karmic package: python-lxml
+from lxml import etree  # Ubuntu Karmic package: python-lxml
 import sys, re, os
 import base64
 from optparse import OptionParser
@@ -37,6 +37,7 @@ PX2PT = 1.0/1.25
 
 relIRI_re = re.compile(r'url\(#(.*)\)')
 
+
 def get_unit_attr(value):
     # coordinate handling from http://www.w3.org/TR/SVG11/coords.html#Units
     units = None # default (user)
@@ -47,6 +48,7 @@ def get_unit_attr(value):
             break
     val_float = float(value) # this will fail if units str not parsed
     return val_float, units
+
 
 def convert_to_pixels( val, units):
     if units == 'px' or units is None:
@@ -62,6 +64,7 @@ def convert_to_pixels( val, units):
     else:
         raise ValueError('unsupport unit conversion to pixels: %s'%units)
     return val_px
+
 
 def fix_ids( elem, prefix, level=0 ):
     ns = '{http://www.w3.org/2000/svg}'
@@ -98,6 +101,7 @@ def fix_ids( elem, prefix, level=0 ):
 
     for child in elem:
         fix_ids(child,prefix,level=level+1)
+
 
 def export_images( elem, filename_fmt='image%03d', start_idx=1 ):
     """replace inline images with files"""
@@ -141,11 +145,12 @@ def export_images( elem, filename_fmt='image%03d', start_idx=1 ):
                                start_idx=(start_idx+count) )
     return count
 
+
 header_str = """<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!-- Created with svg_stack (http://github.com/astraw/svg_stack) -->
 """
+
 
 # ------------------------------------------------------------------
 class Document(object):
@@ -170,6 +175,7 @@ class Document(object):
         fd.write( buf )
         if close:
             fd.close()
+
 
 class SVGFileBase(object):
     def __init__(self,fname):
@@ -202,9 +208,11 @@ class SVGFileBase(object):
     def export_images(self,*args,**kwargs):
         export_images(self._root,*args,**kwargs)
 
+
 class SVGFile(SVGFileBase):
     def __str__(self):
         return 'SVGFile(%s)'%repr(self._fname)
+
 
 class SVGFileNoLayout(SVGFileBase):
     def __init__(self,fname,x=0,y=0):
@@ -218,6 +226,7 @@ class SVGFileNoLayout(SVGFileBase):
 
     def __str__(self):
         return 'SVGFileNoLayout(%s)'%repr(self._fname)
+
 
 class LayoutAccumulator(object):
     def __init__(self):
@@ -377,10 +386,12 @@ AlignVCenter = 0x080
 
 AlignCenter = AlignHCenter | AlignVCenter
 
+
 class Layout(object):
     def __init__(self, parent=None):
         if parent is not None:
             raise NotImplementedError('')
+
 
 class BoxLayout(Layout):
     def __init__(self, direction, parent=None):
@@ -657,6 +668,7 @@ class VBoxLayout(BoxLayout):
     def __init__(self, parent=None):
         super(VBoxLayout,self).__init__(TopToBottom,parent=parent)
 
+
 # ------------------------------------------------------------------
 
 def main():
@@ -670,10 +682,10 @@ stdout.
 '''
 
     parser = OptionParser(usage, version=VERSION)
-    parser.add_option("--margin",type='str',
+    parser.add_option("--margin", type='str',
                       help='size of margin (in any units, px default)',
                       default=None)
-    parser.add_option("--direction",type='str',
+    parser.add_option("--direction", type='str',
                       default='vertical',
                       help='horizontal or vertical (or h or v)')
     (options, args) = parser.parse_args()
@@ -691,10 +703,10 @@ stdout.
     else:
         margin_px = 0
 
-    if 0:
-        fd = open('tmp.svg',mode='w')
-    else:
-        fd = sys.stdout
+    # if 0:
+    #     fd = open('tmp.svg', mode='w')
+    # else:
+    fd = sys.stdout
 
     doc = Document()
     if direction == 'vertical':
@@ -703,11 +715,12 @@ stdout.
         layout = HBoxLayout()
 
     for fname in fnames:
-        layout.addSVG(fname,alignment=AlignCenter)
+        layout.addSVG(fname, alignment=AlignCenter)
 
     layout.setSpacing(margin_px)
     doc.setLayout(layout)
-    doc.save( fd )
+    doc.save(fd)
+
 
 if __name__=='__main__':
     main()
