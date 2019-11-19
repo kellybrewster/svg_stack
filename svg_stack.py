@@ -62,7 +62,7 @@ def convert_to_pixels(val, units):
     elif units == 'cm':
         val_px = val * CM2PT * PT2PX
     else:
-        raise ValueError('unsupport unit conversion to pixels: %s' % units)
+        raise ValueError('unsupported unit conversion to pixels: %s' % units)
     return val_px
 
 
@@ -71,7 +71,7 @@ def fix_ids(elem, prefix, level=0):
 
     if isinstance(elem.tag, str) and elem.tag.startswith(ns):
 
-        tag = elem.tag[len(ns):]
+        # tag = elem.tag[len(ns):]
 
         if 'id' in elem.attrib:
             elem.attrib['id'] = prefix + elem.attrib['id']
@@ -82,7 +82,6 @@ def fix_ids(elem, prefix, level=0):
             value = elem.attrib.get(attrib, None)
 
             if value is not None:
-
                 if attrib.startswith('{http://www.w3.org/1999/xlink}'):
                     relIRI = False
                 else:
@@ -146,10 +145,7 @@ def export_images(elem, filename_fmt='image%03d', start_idx=1):
     return count
 
 
-header_str = """<?xml version="1.0" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
- "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-"""
+header_str = ''
 
 
 # ------------------------------------------------------------------
@@ -160,10 +156,10 @@ class Document(object):
     def setLayout(self, layout):
         self._layout = layout
 
-    def save(self, fileobj, debug_boxes=False, **kwargs):
+    def save(self, fileobj, debug_boxes=False, svg_title=None, root_attrs=None, **kwargs):
         if self._layout is None:
             raise ValueError('No layout, cannot save.')
-        accum = LayoutAccumulator(**kwargs)
+        accum = LayoutAccumulator(svg_title, root_attrs, **kwargs)
         self._layout.render(accum, debug_boxes=debug_boxes)
         if hasattr(fileobj, 'write'):
             fd = fileobj
@@ -231,10 +227,12 @@ class SVGFileNoLayout(SVGFileBase):
 
 
 class LayoutAccumulator(object):
-    def __init__(self):
+    def __init__(self, svg_title, root_attrs):
         self._svgfiles = []
         self._svgfiles_no_layout = []
         self._raw_elements = []
+        self._root_attrs = root_attrs
+        self._svg_title = svg_title
 
     def add_svg_file(self, svgfile):
         assert isinstance(svgfile, SVGFile)
@@ -260,9 +258,10 @@ class LayoutAccumulator(object):
 
     def _make_finalized_root(self):
         # get all required namespaces and prefixes
-        NSMAP = {None: 'http://www.w3.org/2000/svg',
-                 'sodipodi': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
-                 }
+        #NSMAP = {None: 'http://www.w3.org/2000/svg',
+        #         'sodipodi': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
+        #         }
+        NSMAP = {None: 'http://www.w3.org/2000/svg'}
         for svgfile in self._svgfiles:
             origelem = svgfile.get_root()
             for key, value in origelem.nsmap.items():
@@ -279,11 +278,19 @@ class LayoutAccumulator(object):
         root = etree.Element('{http://www.w3.org/2000/svg}svg',
                              nsmap=NSMAP)
 
+        # set root attributes
+        root.attrib['version'] = '1.1'
+        if isinstance(self._root_attrs, dict):
+            for attr_name, attr_val in self._root_attrs.items():
+                root.attrib[attr_name] = str(attr_val)
+
+        if self._svg_title:
+            title = etree.SubElement(root, 'title').text = self._svg_title
+
         if 1:
             # inkscape hack
             root_defs = etree.SubElement(root, '{http://www.w3.org/2000/svg}defs')
 
-        root.attrib['version'] = '1.1'
         fname_num = 0
         do_layout = True
         work_list = []
@@ -297,7 +304,7 @@ class LayoutAccumulator(object):
         for (fname_num, do_layout, svgfile) in work_list:
             origelem = svgfile.get_root()
 
-            fix_id_prefix = 'id%d:' % fname_num
+            fix_id_prefix = 'id%d_' % fname_num  # INITIAL DOC USED A COLON TO SEPARATE, THIS DOES NOT RENDER
             elem = etree.SubElement(root, '{http://www.w3.org/2000/svg}g')
             elem.attrib['id'] = 'id%d' % fname_num
 
