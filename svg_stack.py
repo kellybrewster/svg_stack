@@ -62,7 +62,7 @@ def convert_to_pixels(val, units):
     elif units == 'cm':
         val_px = val * CM2PT * PT2PX
     else:
-        raise ValueError('unsupport unit conversion to pixels: %s' % units)
+        raise ValueError('unsupported unit conversion to pixels: %s' % units)
     return val_px
 
 
@@ -71,7 +71,7 @@ def fix_ids(elem, prefix, level=0):
 
     if isinstance(elem.tag, str) and elem.tag.startswith(ns):
 
-        tag = elem.tag[len(ns):]
+        # tag = elem.tag[len(ns):]
 
         if 'id' in elem.attrib:
             elem.attrib['id'] = prefix + elem.attrib['id']
@@ -82,7 +82,6 @@ def fix_ids(elem, prefix, level=0):
             value = elem.attrib.get(attrib, None)
 
             if value is not None:
-
                 if attrib.startswith('{http://www.w3.org/1999/xlink}'):
                     relIRI = False
                 else:
@@ -305,7 +304,7 @@ class LayoutAccumulator(object):
         for (fname_num, do_layout, svgfile) in work_list:
             origelem = svgfile.get_root()
 
-            fix_id_prefix = 'id%d:' % fname_num
+            fix_id_prefix = 'id%d_' % fname_num  # INITIAL DOC USED A COLON TO SEPARATE, THIS DOES NOT RENDER
             elem = etree.SubElement(root, '{http://www.w3.org/2000/svg}g')
             elem.attrib['id'] = 'id%d' % fname_num
 
